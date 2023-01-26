@@ -3,38 +3,49 @@ import conflictError from "../errors/conflictError.js";
 import carRepository from "../repository/carRepository.js";
 
 async function getCars() {
-  const cars = await carRepository.getCars();
-  return cars;
+    const cars = await carRepository.getCars();
+    return cars;
 }
 
 async function getCar(id: number) {
-  const car = await carRepository.getCar(id);
-  if (!car) {
-    throw notFoundError();
-  }
+    const car = await carRepository.getCar(id);
+    if (!car) {
+        throw notFoundError();
+    }
 
-  return car;
+    return car;
 }
 
-async function createCar(model: string, licensePlate: string, year: number, color: string) {
-  const car = await carRepository.getCarWithLicensePlate(licensePlate);
-  if (car) {
-    throw conflictError(`Car with license plate ${licensePlate} already registered.`)
-  }
+async function createOrUpdateCar(
+    id: number,
+    model: string,
+    licensePlate: string,
+    year: string,
+    color: string
+) {
+    if (!id) {
+        const car = await carRepository.getCarWithLicensePlate(licensePlate);
+        if (car) {
+            throw conflictError(
+                `Car with license plate ${licensePlate} already registered.`
+            );
+        }
+    }
 
-  await carRepository.createCar(model, licensePlate, year, color);
+    await carRepository.upsertCar(id, model, licensePlate, year, color);
 }
 
 async function deleteCar(id: number) {
-  await getCar(id);
-  await carRepository.deleteCar(id);
+    await getCar(id);
+    await carRepository.deleteCar(id);
 }
 
 const carService = {
-  getCars,
-  getCar,
-  createCar,
-  deleteCar
-}
+    getCars,
+    getCar,
+
+    createOrUpdateCar,
+    deleteCar,
+};
 
 export default carService;
